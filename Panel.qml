@@ -20,6 +20,10 @@ Panel {
 
   moduleName: "gdeyoung.readyroom"
   ipcTarget: "gdeyoung.readyroom"
+  // Fleet pattern (powercore/tailfin/sysmon): custom verbs live under the
+  // same target as ipcTarget, replacing the base handler — a second,
+  // separately-targeted handler never registers on this Quickshell build.
+  manageIpc: false
 
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color panelForeground: Color.popups.text
@@ -219,12 +223,12 @@ Panel {
   onSettingsChanged: if (!loading) loadSettings()
 
   // Screenshot/hero support: the card's rect in screen coordinates, from the
-  // panel's own scene graph (the only reliable source on scaled outputs).
-  // Reach the card structurally — content.parent chain — because PopupCard
-  // internals are private ids. Direct child + typed args, per the proven
-  // powercore/armoury pattern (property-var wrappers never register).
+  // panel's own scene graph (the omarchy-shell wrapper needs no changes —
+  // geometry/tab join open/close/toggle/status under this target). Reach the
+  // card structurally — content.parent chain — because PopupCard internals
+  // are private ids. Direct child + typed args, per the proven fleet pattern.
   IpcHandler {
-    target: "gdeyoung.readyroom.panel"
+    target: "gdeyoung.readyroom"
 
     function geometry(): string {
       var card = content.parent.parent          // Column → holder → card
