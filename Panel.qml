@@ -217,6 +217,28 @@ Panel {
   Component.onCompleted: loadSettings()
   onSettingsChanged: if (!loading) loadSettings()
 
+  // Screenshot/hero support: the card's rect in screen coordinates, from the
+  // panel's own scene graph (the only reliable source on scaled outputs).
+  // Reach the card structurally — content.parent chain — because PopupCard
+  // internals are private ids.
+  property var ipc: IpcHandler {
+    target: "gdeyoung.readyroom.panel"
+
+    function geometry(): string {
+      var card = content.parent.parent          // Column → holder → card
+      var pos = card.mapToItem(null, 0, 0)
+      return JSON.stringify({
+        x: Math.round(pos.x), y: Math.round(pos.y),
+        width: Math.round(card.width), height: Math.round(card.height)
+      })
+    }
+
+    function tab(name): string {
+      root.setTab(name)
+      return root.tab
+    }
+  }
+
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
