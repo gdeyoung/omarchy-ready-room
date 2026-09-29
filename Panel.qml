@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import qs.Commons
 import qs.Ui
 import "session"
@@ -220,8 +221,9 @@ Panel {
   // Screenshot/hero support: the card's rect in screen coordinates, from the
   // panel's own scene graph (the only reliable source on scaled outputs).
   // Reach the card structurally — content.parent chain — because PopupCard
-  // internals are private ids.
-  property var ipc: IpcHandler {
+  // internals are private ids. Direct child + typed args, per the proven
+  // powercore/armoury pattern (property-var wrappers never register).
+  IpcHandler {
     target: "gdeyoung.readyroom.panel"
 
     function geometry(): string {
@@ -233,7 +235,7 @@ Panel {
       })
     }
 
-    function tab(name): string {
+    function tab(name: string): string {
       root.setTab(name)
       return root.tab
     }
