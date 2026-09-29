@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "session"
@@ -229,6 +230,12 @@ Panel {
   // are private ids. Direct child + typed args, per the proven fleet pattern.
   IpcHandler {
     target: "gdeyoung.readyroom"
+
+    function open(): void { root.open() }
+    function close(): void { root.close() }
+    function show(): void { root.open() }
+    function hide(): void { root.close() }
+    function toggle(): void { root.toggle() }
 
     function geometry(): string {
       var card = content.parent.parent          // Column → holder → card
