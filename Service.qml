@@ -48,6 +48,10 @@ QtObject {
 
   readonly property bool replayArmed: replay.armed
 
+  // The save-clip keybind in ~/.config/hypr/bindings.lua. State only lives
+  // in the file (via gc-binds), so this reads, never remembers.
+  property BindController binds: BindController { pluginDir: root.pluginDir }
+
   // M3. The saved-clip list, refreshed when a clip lands rather than polled.
   property ClipStore clipStore: ClipStore { pluginDir: root.pluginDir }
 

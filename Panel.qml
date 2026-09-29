@@ -33,6 +33,7 @@ Panel {
   readonly property var replay: gameCenter ? gameCenter.replay : null
   readonly property bool replayArmed: replay ? replay.armed : false
   readonly property var clipStore: gameCenter ? gameCenter.clipStore : null
+  readonly property var binds: gameCenter ? gameCenter.binds : null
   readonly property var padStore: gameCenter ? gameCenter.pads : null
   readonly property var overlayStore: gameCenter ? gameCenter.overlay : null
 
@@ -52,6 +53,7 @@ Panel {
     }
     if (session) session.refresh()
     if (replay) replay.refresh()
+    if (binds) binds.refresh()
     // One find per open, not a watcher on the video folder: that can live on a
     // network mount and a FileView there would stall the event loop.
     if (clipStore) clipStore.refresh()
@@ -330,6 +332,7 @@ Panel {
           visible: root.tab === "clips"
           replay: root.replay
           clips: root.clipStore
+          binds: root.binds
           foreground: root.panelForeground
           fontFamily: root.fontFamily
         }
