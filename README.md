@@ -1,5 +1,8 @@
 # Ready Room
 
+![Ready Room](preview.png)
+
+
 The pre-game ritual in one Omarchy panel: a game-mode session, controller
 care, instant replay and a stats overlay — instead of six bar widgets that
 don't know about each other.
