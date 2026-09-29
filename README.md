@@ -1,10 +1,14 @@
 # Ready Room
 
-The pre-game ritual in one Omarchy panel: session toggles, controllers and
-instant replay, instead of six separate bar widgets that don't know about each
-other.
+The pre-game ritual in one Omarchy panel: a game-mode session, controller
+care, instant replay and a stats overlay — instead of six bar widgets that
+don't know about each other.
 
-> **Status: v0.2.0.** All four tabs work. Built and verified against a real
+**gaming · game mode · session · controller · gamepad · battery · rumble ·
+instant replay · replay buffer · clip capture · screen recording ·
+gpu-screen-recorder · overlay · stats · FPS · MangoHud · Hyprland · Quickshell**
+
+> **Status: v1.0.0.** All four tabs work; the save-clip keybind is set from the panel. Built and verified against a real
 > Xbox One S on the `xone` driver, an Xbox Wireless Adapter, and
 > gpu-screen-recorder 6.1.
 

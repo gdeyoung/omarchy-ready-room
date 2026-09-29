@@ -6,7 +6,7 @@
   "author": "Greg DeYoung (fork of Austin Larson's dielerorn.gamecenter)",
   "license": "MIT",
   "repository": "https://github.com/gdeyoung/omarchy-ready-room",
-  "description": "The pre-game ritual in one panel — session toggles, controllers, instant replay and a stats overlay, without six separate bar widgets",
+  "description": "Omarchy gaming panel: a game-mode session (keep-awake, do-not-disturb, night light, performance power profile), controller and gamepad battery + rumble test, a gpu-screen-recorder instant-replay buffer with one-key clip saving, and a CPU/GPU/VRAM stats overlay that pairs with MangoHud for FPS. Replaces six bar widgets with one pre-game ritual.",
   "kinds": [
     "service",
     "bar-widget"
