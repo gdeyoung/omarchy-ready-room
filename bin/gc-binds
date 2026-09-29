@@ -138,6 +138,9 @@ cmd_set() {
   [[ -n $mask && $mask -gt 0 ]] || { json_error "need at least one modifier"; return 2; }
 
   clash="$(collision "$key" "$mask")"
+  # Our own live bind is not a collision: re-setting the same combo must be
+  # idempotent, not refused. Any other bind with the same key+mask still is.
+  [[ "$clash" == "$DESC ("* ]] && clash=""
   if [[ -n $clash ]]; then
     json_error "'$norm' is already bound: $clash — pick another combo"
     return 1
