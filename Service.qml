@@ -113,7 +113,12 @@ QtObject {
 
     // The one worth binding to a key:
     //   bind = SUPER ALT, R, exec, omarchy-shell -q gamecenter saveClip
-    function saveClip(): string { root.replay.save(root.replay.seconds); return "saving" }
+    // A quiet no-op when nothing is armed: a keybind that fires with no
+    // buffer must not raise an error surface — the game is what matters.
+    function saveClip(): string {
+      if (!root.replayArmed) return "buffer not armed"
+      root.replay.save(root.replay.seconds); return "saving"
+    }
     function replayArm(): string { root.replay.arm(); return "arming" }
     function replayDisarm(): string { root.replay.disarm(); return "disarming" }
     function replayToggle(): string { root.replay.toggle(); return "toggling" }

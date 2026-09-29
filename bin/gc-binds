@@ -1,0 +1,230 @@
+#!/bin/bash
+#
+# Game Center save-clip keybind, managed in ~/.config/hypr/bindings.lua.
+#
+# The plugin writes Hyprland config — the most invasive thing it does — so the
+# write is fenced four ways:
+#
+#   1. Only a marked block is ever touched; anything else in the file is the
+#      user's and stays byte-identical.
+#   2. The combo is validated against a strict token whitelist before it
+#      reaches Lua — no free-form text is ever interpolated into config.
+#   3. Collisions are checked against live `hyprctl binds` first (a shadowed
+#      bind is a silent failure), and the write is refused on a hit.
+#   4. After `hyprctl reload`, the bind is verified as actually registered (by
+#      its description); if it is not, the pre-write backup is restored and
+#      reloaded, and the failure is reported. The user's config never stays
+#      broken because of us.
+#
+# gc-binds set "SUPER + ALT + R"   write/replace the block, reload, verify
+# gc-binds clear                   remove the block, reload
+# gc-binds status                  current block + collision report
+#
+set -uo pipefail
+
+BINDS_FILE="$HOME/.config/hypr/bindings.lua"
+BACKUP="$HOME/.config/hypr/bindings.lua.gamecenter-bak"
+BEGIN="--### begin game-center (managed, edit outside this block)"
+END="--### end game-center"
+DESC="Game Center: save replay clip"
+CMD="omarchy-shell -q gamecenter saveClip"
+
+json_error() { jq -n --arg e "$1" '{ok:false,error:$e}'; }
+
+# Hyprland ModMask bits (config/ConfigManager values):
+# SHIFT=1 CAPS=2 CTRL=4 ALT=8 MOD2=16 MOD3=32 SUPER=64 MOD5=128
+modmask_for() { # combo string → bitmask, or error (final key token excluded)
+  local mask=0 tok
+  IFS='+' read -ra toks <<<"$1"
+  for tok in "${toks[@]:0:${#toks[@]}-1}"; do
+    tok="$(echo "$tok" | tr -d ' ' | tr '[:lower:]' '[:upper:]')"
+    case "$tok" in
+      SHIFT) mask=$((mask | 1)) ;;
+      CAPS)  mask=$((mask | 2)) ;;
+      CTRL)  mask=$((mask | 4)) ;;
+      ALT)   mask=$((mask | 8)) ;;
+      SUPER) mask=$((mask | 64)) ;;
+      META)  mask=$((mask | 64)) ;;
+      *) return 1 ;;
+    esac
+  done
+  echo "$mask"
+}
+
+key_for() { # combo string → final token, normalized
+  local last
+  last="${1##*+}"
+  echo "$last" | tr -d ' ' | tr '[:lower:]' '[:upper:]'
+}
+
+# Strict shape gate before anything is written: mod tokens from the whitelist
+# above plus one final key token (letter, digit, or F1–F12).
+valid_combo() {
+  local combo="$1" tok last n=0
+  [[ "$combo" =~ ^[A-Za-z0-9+F[:space:]]+$ ]] || return 1
+  IFS='+' read -ra toks <<<"$combo"
+  ((${#toks[@]} >= 2)) || return 1
+  for tok in "${toks[@]:0:${#toks[@]}-1}"; do
+    tok="$(echo "$tok" | tr -d ' ' | tr '[:lower:]' '[:upper:]')"
+    case "$tok" in
+      SHIFT|CAPS|CTRL|ALT|SUPER|META) n=$((n+1)) ;;
+      *) return 1 ;;
+    esac
+  done
+  last="$(key_for "$combo")"
+  [[ "$last" =~ ^[A-Z0-9]$ ]] || [[ "$last" =~ ^F([1-9]|1[0-2])$ ]]
+}
+
+normalize_combo() { # → "SUPER + ALT + R" display form
+  # NOTE: join explicitly. The old `local IFS=' + '; echo "${out[*]}"` trick is
+  # wrong — bash array joins use only the FIRST character of IFS, so it
+  # produced "SUPER ALT R" with no plus signs, which Hyprland silently rejects
+  # (the bind never registers and the failure looks like a reload problem).
+  local out="" tok
+  IFS='+' read -ra toks <<<"$1"
+  for tok in "${toks[@]}"; do
+    tok="$(echo "$tok" | tr -d ' ' | tr '[:lower:]' '[:upper:]')"
+    out="${out:+$out + }$tok"
+  done
+  echo "$out"
+}
+
+# Live collision check: same key AND same modmask in `hyprctl binds` (empty
+# submap only) means our bind would shadow or be shadowed.
+#
+# NOTE: hyprctl output goes through a temp file, not a pipe — a `python3 - `
+# heredoc replaces stdin, so piping hyprctl into it feeds python the SCRIPT on
+# stdin and zero lines of binds, and every collision check silently passes.
+collision() { # key modmask → prints "desc (bindtype)" or nothing
+  local tmp
+  tmp="$(mktemp)"
+  hyprctl binds >"$tmp" 2>/dev/null
+  python3 - "$1" "$2" "$tmp" <<'PY'
+import sys
+key, want, path = sys.argv[1], sys.argv[2], sys.argv[3]
+rec = {}
+
+def check(rec):
+    if (rec.get("key") == key and str(rec.get("modmask")) == want
+            and rec.get("submap", "") == ""):
+        print(rec.get("description", "?") + " (" + rec.get("type", "bind") + ")")
+        sys.exit(0)
+
+for line in open(path):
+    line = line.strip()
+    if not line:
+        check(rec)
+        rec = {}
+        continue
+    k, _, v = line.partition(":")
+    rec[k.strip()] = v.strip()
+    for t in ("bind", "bindd", "bindl", "bindle", "bindr", "binds", "bindse"):
+        if k.strip() == t:
+            rec["type"] = t
+check(rec)
+PY
+  rm -f "$tmp"
+}
+
+have_block() { [[ -f $BINDS_FILE ]] && grep -qF -- "$BEGIN" "$BINDS_FILE"; }
+
+cmd_set() {
+  local combo="$1"
+  valid_combo "$combo" || { json_error "not a valid combo: use e.g. 'SUPER + ALT + R'"; return 2; }
+  local norm key mask clash
+  norm="$(normalize_combo "$combo")"
+  key="$(key_for "$combo")"
+  mask="$(modmask_for "$combo")" || { json_error "bad modifiers"; return 2; }
+  [[ -n $mask && $mask -gt 0 ]] || { json_error "need at least one modifier"; return 2; }
+
+  clash="$(collision "$key" "$mask")"
+  if [[ -n $clash ]]; then
+    json_error "'$norm' is already bound: $clash — pick another combo"
+    return 1
+  fi
+
+  mkdir -p "$(dirname "$BINDS_FILE")"
+  cp "$BINDS_FILE" "$BACKUP" 2>/dev/null || true
+
+  local block="$BEGIN
+o.bind(\"$norm\", \"$DESC\", \"$CMD\")
+$END"
+
+  if have_block; then
+    python3 - "$BINDS_FILE" "$BEGIN" "$END" "$block" <<'PY'
+import sys
+path, begin, end, block = sys.argv[1:5]
+text = open(path).read()
+start = text.index(begin)
+stop = text.index(end) + len(end)
+open(path, "w").write(text[:start] + block + text[stop:])
+PY
+  else
+    { [[ -s $BINDS_FILE ]] && cat "$BINDS_FILE" && printf '\n\n'
+      printf '%s\n' "$block"; } >"$BINDS_FILE.tmp" && mv "$BINDS_FILE.tmp" "$BINDS_FILE"
+  fi
+
+  # Reload, then poll for the bind to appear. Two retries because a reload
+  # landing a second after another one (a clear immediately followed by a set)
+  # has been observed to be dropped by Hyprland — the config is already
+  # reloading and the new request is ignored. A second reload after a pause
+  # always took. Polling `hyprctl binds` (not ping) because registration
+  # itself lags behind reload answering "ok". (0/1 flag, not true/false: with
+  # set -u, a "false" string inside (( )) expands as an unset variable.)
+  local attempt i registered=0
+  for ((attempt = 0; attempt < 3 && registered == 0; attempt++)); do
+    hyprctl reload >/dev/null 2>&1
+    sleep 1
+    for ((i = 0; i < 16 && registered == 0; i++)); do
+      if hyprctl binds 2>/dev/null | grep -q "description: $DESC"; then registered=1; fi
+      (( registered == 0 )) && sleep 0.25
+    done
+  done
+  # Verify by description: if Hyprland rejected the file, the bind is absent.
+  if hyprctl binds 2>/dev/null | grep -q "description: $DESC"; then
+    jq -n --arg bind "$norm" '{ok:true,bind:$bind,verified:true}'
+  else
+    # Self-heal: put the user's file back exactly as it was.
+    if [[ -f $BACKUP ]]; then cp "$BACKUP" "$BINDS_FILE"; hyprctl reload >/dev/null 2>&1; fi
+    json_error "bind did not register after reload — bindings.lua restored from backup"
+    return 1
+  fi
+}
+
+cmd_clear() {
+  if ! have_block; then jq -n '{ok:true,cleared:false}'; return 0; fi
+  cp "$BINDS_FILE" "$BACKUP" 2>/dev/null || true
+  python3 - "$BINDS_FILE" "$BEGIN" "$END" <<'PY'
+import sys
+path, begin, end = sys.argv[1:4]
+text = open(path).read()
+start = text.index(begin)
+stop = text.index(end) + len(end)
+open(path, "w").write((text[:start] + text[stop:]).strip() + "\n")
+PY
+  hyprctl reload >/dev/null 2>&1
+  jq -n '{ok:true,cleared:true}'
+}
+
+cmd_status() {
+  local bound="none" combo="" key mask clash=""
+  if have_block; then
+    combo="$(grep -A1 -F -- "$BEGIN" "$BINDS_FILE" | grep -o 'o\.bind("[^"]*"' | head -1 | cut -d'"' -f2)"
+    bound="${combo:-unknown}"
+    if [[ -n $combo ]]; then
+      key="$(key_for "$combo")"; mask="$(modmask_for "$combo")"
+      clash="$(collision "$key" "$mask")"
+      # Our own registered bind is not a conflict — it is the happy path.
+      [[ "$clash" == "$DESC"* ]] && clash=""
+    fi
+  fi
+  jq -n --arg bound "$bound" --arg clash "$clash" \
+    '{bound:$bound, collision:$clash, file:"~/.config/hypr/bindings.lua"}'
+}
+
+case "${1:-status}" in
+  set) shift; cmd_set "${1:-}" ;;
+  clear) cmd_clear ;;
+  status) cmd_status ;;
+  *) echo "Usage: gc-binds [set|clear|status]" >&2; exit 2 ;;
+esac
