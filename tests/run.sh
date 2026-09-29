@@ -99,21 +99,21 @@ else
       ok "armed buffer is invisible to Omarchy's recording detector"
     fi
 
-    pidfile="${XDG_RUNTIME_DIR}/omarchy-game-center/replay.pid"
+    pidfile="${XDG_RUNTIME_DIR}/gdeyoung-gamecenter/replay.pid"
     read -r pid _ <"$pidfile" 2>/dev/null
     if [[ -n ${pid:-} && -d /proc/$pid ]]; then ok "buffer process is tracked by pid file"
     else bad "buffer process is tracked by pid file"; fi
 
     # comm is truncated to 15 chars by the kernel, so anything matching our
     # renamed process by name must use the full command line.
-    if [[ "$(cat /proc/$pid/comm 2>/dev/null)" != "omarchy-game-center-replay" ]]; then
+    if [[ "$(cat /proc/$pid/comm 2>/dev/null)" != "gdeyoung-gamecenter-replay" ]]; then
       ok "process name is truncated in comm (pid file is the only safe identity)"
     else
       skip "comm truncation" "kernel no longer truncates comm"
     fi
 
     "$PLUGIN_DIR/bin/gc-replay" disarm >/dev/null 2>&1
-    if ! pgrep -f '^omarchy-game-center-replay ' >/dev/null; then ok "disarm stops the buffer"
+    if ! pgrep -f '^gdeyoung-gamecenter-replay ' >/dev/null; then ok "disarm stops the buffer"
     else bad "disarm stops the buffer"; fi
   else
     bad "buffer arms"

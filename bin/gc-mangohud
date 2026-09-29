@@ -48,6 +48,13 @@ block="$BEGIN
 position=$mh_position
 fps
 frametime=1
+# Horizontal one-line bar, matching the tuned user config this fork ships with
+# rather than MangoHud's stacked default — a managed block that fights the
+# user's own geometry is worse than none.
+horizontal
+horizontal_stretch=0
+font_size=16
+hud_no_margin
 "
 has cpu && block+="cpu_stats
 "

@@ -22,11 +22,11 @@ QtObject {
   id: root
 
   readonly property string home: Quickshell.env("HOME")
-  readonly property string pluginDir: home + "/.config/omarchy/plugins/dielerorn.gamecenter"
+  readonly property string pluginDir: home + "/.config/omarchy/plugins/gdeyoung.gamecenter"
 
-  // /run/user/1000/omarchy-game-center. Wiped at logout, which is exactly the
+  // /run/user/1000/gdeyoung-gamecenter. Wiped at logout, which is exactly the
   // staleness boundary we want: anything found here belongs to this login.
-  readonly property string runtimeDir: (Quickshell.env("XDG_RUNTIME_DIR") || ("/tmp/omarchy-game-center-" + Quickshell.env("UID"))) + "/omarchy-game-center"
+  readonly property string runtimeDir: (Quickshell.env("XDG_RUNTIME_DIR") || ("/tmp/gdeyoung-gamecenter-" + Quickshell.env("UID"))) + "/gdeyoung-gamecenter"
 
   // Distinguishes "this boot's leftovers" from "a token that survived a
   // reboot" without trusting timestamps. Read once; it cannot change.
@@ -66,7 +66,7 @@ QtObject {
 
   function statusJson() {
     return JSON.stringify({
-      version: "0.2.0",
+      version: "0.3.0",
       session: root.sessionActive,
       replay: root.replayArmed,
       pads: root.padCount,

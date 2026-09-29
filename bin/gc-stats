@@ -8,10 +8,23 @@ Streaming rather than one-shot because CPU load is a *delta* — a single read o
 cost more than the thing being measured. The overlay starts this when it opens
 and kills it when it closes.
 
-Everything here is read from /proc and /sys except the GPU, which comes from
-nvidia-smi on NVIDIA and from sysfs on AMD. A metric that cannot be read is
-absent from the JSON rather than zero, so the overlay can leave the row out
-instead of confidently displaying 0%.
+Everything here is read from /proc and /sys except the GPU on NVIDIA, which
+comes from nvidia-smi. The GPU probe is a chain, not an if/else on vendor:
+
+    nvidia-smi  →  amdgpu sysfs  →  Intel package power (RAPL)  →  none
+
+Two failure modes the chain exists for, both seen in the wild:
+
+  * A machine with nvidia-utils installed but no NVIDIA GPU (common after a
+    distro default or a misjudged dependency pull). The binary exists and
+    exits 9 ("couldn't communicate with the NVIDIA driver"), so *binary
+    presence* must never be the test — the query has to actually succeed.
+  * Intel's xe driver exposes no gpu_busy_percent and no GT clock counters in
+    sysfs the way amdgpu does. Pretending otherwise would draw a GPU row full
+    of guesses. What IS honest on such a machine: the SoC package power from
+    RAPL (on Intel laptops the GPU is on the same package as the CPU, so
+    package watts rising while CPU% stays flat is the GPU working), plus the
+    CPU-side sensors. GPU% and VRAM are omitted, not faked.
 
 Deliberately not here: frames per second. Only something running inside the
 game's own process can count its frames — that is what MangoHud's Vulkan and
@@ -19,6 +32,7 @@ OpenGL layers are for, and pretending otherwise with a guess from the outside
 would be worse than saying so.
 """
 
+import glob
 import json
 import os
 import re
@@ -29,6 +43,7 @@ import time
 
 HWMON = "/sys/class/hwmon"
 DRM = "/sys/class/drm"
+POWERCAP = "/sys/class/powercap"
 
 
 def read(path, default=""):
@@ -68,7 +83,8 @@ def cpu_temp():
     for entry in sorted(os.listdir(HWMON)) if os.path.isdir(HWMON) else []:
         base = os.path.join(HWMON, entry)
         name = read(os.path.join(base, "name"))
-        if name not in ("k10temp", "coretemp", "zenpower", "cpu_thermal"):
+        if name not in ("k10temp", "coretemp", "zenpower", "cpu_thermal",
+                        "x86_pkg_temp", "acpitz"):
             continue
         for label_file in sorted(f for f in os.listdir(base) if re.match(r"temp\d+_input", f)):
             value = read(os.path.join(base, label_file))
@@ -77,25 +93,111 @@ def cpu_temp():
     return None
 
 
+class PackagePower:
+    """Whole-SoC watts from Intel RAPL, by differencing energy counters.
+
+    On an Intel laptop the GPU sits on the same package as the CPU, so package
+    watts is the honest GPU-activity signal the xe driver does not otherwise
+    expose. The counter is cumulative microjoules; watts = ΔE/Δt. AMD machines
+    report GPU power directly through amdgpu sysfs, so this class is only used
+    on Intel.
+    """
+
+    def __init__(self):
+        self.path = None
+        # Top-level domains only (intel-rapl:0); sub-domains (core, dram) are
+        # components of the package, not alternatives to it. intel-rapl-mmio is
+        # the same counter via MMIO — prefer the standard interface, fall back
+        # to it. Readability is the test, not existence: on kernels with
+        # lockdown these files are root-owned 0400 and exist unreadable.
+        for pattern in ("intel-rapl:*", "intel-rapl-mmio:*"):
+            for d in sorted(glob.glob(os.path.join(POWERCAP, pattern))):
+                if d.count(":") != 1:
+                    continue  # sub-domain like intel-rapl:0:0
+                p = os.path.join(d, "energy_uj")
+                if os.access(p, os.R_OK):
+                    self.path = p
+                    return
+
+    @property
+    def available(self):
+        return self.path is not None
+
+    def take(self):
+        v = read(self.path)
+        return int(v) if v.isdigit() else None
+
+
+class BatteryPower:
+    """Whole-machine draw from the battery, when running unplugged.
+
+    Intel's RAPL counters are root-only on lockdown kernels, but a discharging
+    battery is a readable whole-system wattmeter: current_now × voltage_now
+    spans CPU, GPU, screen, everything. On AC it means nothing (the battery is
+    bypassed or charging), so the class reports nothing there — the honest
+    fallback behind the fallback.
+    """
+
+    def __init__(self):
+        self.path = None
+        for bat in sorted(glob.glob("/sys/class/power_supply/BAT*")):
+            if (os.path.exists(os.path.join(bat, "current_now"))
+                    and os.path.exists(os.path.join(bat, "voltage_now"))):
+                self.path = bat
+                return
+
+    @property
+    def available(self):
+        if self.path is None:
+            return False
+        status = read(os.path.join(self.path, "status"))
+        return status == "Discharging"
+
+    def take(self):
+        amps = read(os.path.join(self.path, "current_now"))
+        volts = read(os.path.join(self.path, "voltage_now"))
+        if not amps.isdigit() or not volts.isdigit():
+            return None
+        # Some firmires report mA/mV, others µA/µV; 40–400 A is impossible, so
+        # magnitude-disambiguate rather than guess.
+        if int(amps) > 1_000_000:
+            amps, volts = int(amps) // 1_000, int(volts) // 1_000
+        watts = (int(amps) / 1_000_000) * (int(volts) / 1_000_000)
+        return round(watts, 1)
+
+
 class Gpu:
-    """NVIDIA through nvidia-smi, AMD and Intel through sysfs."""
+    """NVIDIA through nvidia-smi, AMD through sysfs. Intel xe reports no
+    utilization counters, so it is not a source here — the package-power
+    fallback in main() covers it instead."""
 
     def __init__(self):
         self.smi = shutil.which("nvidia-smi")
         self.amd = None
         if not self.smi:
-            for card in sorted(os.listdir(DRM)) if os.path.isdir(DRM) else []:
-                busy = os.path.join(DRM, card, "device", "gpu_busy_percent")
-                if os.path.exists(busy):
-                    self.amd = os.path.join(DRM, card, "device")
-                    break
+            self._find_amd()
+
+    def _find_amd(self):
+        for card in sorted(os.listdir(DRM)) if os.path.isdir(DRM) else []:
+            busy = os.path.join(DRM, card, "device", "gpu_busy_percent")
+            if os.path.exists(busy):
+                self.amd = os.path.join(DRM, card, "device")
+                break
 
     def read(self):
         if self.smi:
-            return self._nvidia()
+            stats = self._nvidia()
+            if stats is not None:
+                return "nvidia", stats
+            # nvidia-smi exists but the driver is absent (phantom install) or
+            # the query failed. Fall through to the next source rather than
+            # reporting a dead GPU row — but only look once per process; the
+            # answer will not change and re-running it every second is waste.
+            self.smi = None
+            self._find_amd()
         if self.amd:
-            return self._amd()
-        return None
+            return "amd", self._amd()
+        return None, None
 
     def _nvidia(self):
         try:
@@ -127,19 +229,24 @@ class Gpu:
         used = read(os.path.join(self.amd, "mem_info_vram_used"))
         total = read(os.path.join(self.amd, "mem_info_vram_total"))
         temp = None
+        watts = None
         hwmon_dir = os.path.join(self.amd, "hwmon")
         if os.path.isdir(hwmon_dir):
             for entry in os.listdir(hwmon_dir):
-                value = read(os.path.join(hwmon_dir, entry, "temp1_input"))
-                if value.isdigit():
-                    temp = round(int(value) / 1000)
-                    break
+                base = os.path.join(hwmon_dir, entry)
+                v = read(os.path.join(base, "temp1_input"))
+                if temp is None and v.isdigit():
+                    temp = round(int(v) / 1000)
+                # amdgpu reports average board power in power1_average (µW).
+                p = read(os.path.join(base, "power1_average"))
+                if watts is None and p.isdigit():
+                    watts = round(int(p) / 1_000_000)
         return {
             "percent": int(busy) if busy.isdigit() else None,
             "vramUsedMb": round(int(used) / 1048576) if used.isdigit() else None,
             "vramTotalMb": round(int(total) / 1048576) if total.isdigit() else None,
             "temp": temp,
-            "watts": None,
+            "watts": watts,
         }
 
 
@@ -159,10 +266,22 @@ def main():
                 pass
 
     gpu = Gpu()
-    emit({"t": "hello", "gpu": "nvidia" if gpu.smi else ("amd" if gpu.amd else "none"),
+    pkg = PackagePower()
+    bat = BatteryPower()
+
+    # The kind announced in hello matches what the first successful read finds,
+    # so a phantom NVIDIA install announces itself honestly as what it is.
+    _, first = gpu.read()
+    kind = "nvidia" if gpu.smi else ("amd" if gpu.amd else "none")
+    if first is None:
+        kind = "none"
+    emit({"t": "hello", "gpu": kind,
+          "packagePower": pkg.available,
           "interval": interval})
 
     previous = cpu_times()
+    prev_energy = pkg.take() if pkg.available else None
+    prev_time = time.monotonic()
     while True:
         time.sleep(interval)
         sample = {"t": "stats"}
@@ -183,9 +302,30 @@ def main():
         if memory:
             sample["ram"] = memory
 
-        gpu_stats = gpu.read()
+        gpu_kind, gpu_stats = gpu.read()
         if gpu_stats:
             sample["gpu"] = gpu_stats
+
+        # Package power is emitted whenever RAPL is readable and the GPU did
+        # not already report its own watts (NVIDIA does; amdgpu usually does).
+        # On xe machines this is the only honest GPU-activity number there is.
+        if pkg.available and not (gpu_stats and gpu_stats.get("watts") is not None):
+            energy = pkg.take()
+            now = time.monotonic()
+            if energy is not None and prev_energy is not None and energy >= prev_energy:
+                watts = (energy - prev_energy) / (now - prev_time) / 1_000_000
+                # A suspend/resume or counter wrap can produce garbage; the
+                # package socket tops out far below this.
+                if watts < 1000:
+                    sample["packageWatts"] = round(watts)
+            prev_energy = energy
+            prev_time = now
+        elif bat.available and not (gpu_stats and gpu_stats.get("watts") is not None):
+            # RAPL unreadable (lockdown kernel) and no GPU watts: a discharging
+            # battery is the honest whole-system draw, last fallback.
+            w = bat.take()
+            if w is not None:
+                sample["packageWatts"] = w
 
         emit(sample)
 

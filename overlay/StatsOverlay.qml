@@ -137,6 +137,11 @@ PanelWindow {
         tempValue: s.gpu.temp
       })
     }
+    // xe-driven Intel machines report no utilization counters, so package
+    // watts (GPU + CPU on one die) is the honest activity signal there.
+    if (root.showGpu && !s.gpu && s.packageWatts !== undefined && s.packageWatts !== null) {
+      out.push({ label: "SoC", value: s.packageWatts + "W", temp: "", tempValue: null })
+    }
     if (root.showVram && s.gpu && s.gpu.vramTotalMb) {
       out.push({
         label: "VRAM",

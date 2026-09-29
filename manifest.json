@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "dielerorn.gamecenter",
+  "id": "gdeyoung.gamecenter",
   "name": "Game Center",
-  "version": "0.2.0",
-  "author": "Austin Larson",
+  "version": "0.3.0",
+  "author": "Greg DeYoung (fork of Austin Larson's dielerorn.gamecenter)",
   "license": "MIT",
-  "repository": "https://github.com/Dielerorn/omarchy-game-center",
+  "repository": "https://github.com/gdeyoung/omarchy-game-center",
   "description": "The pre-game ritual in one panel — session toggles, controllers and instant replay, without six separate bar widgets",
   "kinds": [
     "service",
@@ -28,11 +28,11 @@
       "silenceNotifications": true,
       "nightLightOff": true,
       "performanceProfile": true,
-      "replaySeconds": 30,
-      "replayStorage": "ram",
+      "replaySeconds": 300,
+      "replayStorage": "disk",
       "replayQuality": "balanced",
       "replayAudio": "desktop",
-      "overlayCorner": "top-right",
+      "overlayCorner": "top-left",
       "overlayCpu": true,
       "overlayGpu": true,
       "overlayRam": true,
@@ -96,22 +96,29 @@
         "key": "replaySeconds",
         "type": "integer",
         "label": "Replay buffer length",
-        "min": 5,
-        "max": 300,
-        "step": 5,
-        "defaultValue": 30,
-        "description": "Seconds kept in the buffer. Memory use scales with this and with your monitor: 30s of 1440p60 is roughly 300MB including the encoder's own working set."
+        "min": 60,
+        "max": 900,
+        "step": 60,
+        "defaultValue": 300,
+        "description": "Seconds kept in the buffer — 1, 5, 10 or 15 minutes, Windows Game Bar style. Disk storage is the default; a 10-minute RAM buffer holds gigabytes for the whole session."
       },
       {
         "key": "replayStorage",
         "type": "enum",
         "label": "Replay buffer held in",
         "options": [
-          "ram",
-          "disk"
+          "disk",
+          "ram"
         ],
-        "defaultValue": "ram",
-        "description": "RAM is instant and costs memory for the whole session. Disk trades that for writes to your drive."
+        "defaultValue": "disk",
+        "description": "RAM is instant and costs memory for the whole session. Disk trades that for writes to your drive — the sane default once buffers run minutes."
+      },
+      {
+        "key": "replayDir",
+        "type": "string",
+        "label": "Clip folder",
+        "defaultValue": "",
+        "description": "Where keybind dumps land. Empty = Videos/Clips (or $OMARCHY_SCREENRECORD_DIR)."
       },
       {
         "key": "replayQuality",
@@ -148,7 +155,7 @@
           "bottom-left",
           "bottom-right"
         ],
-        "defaultValue": "top-right",
+        "defaultValue": "top-left",
         "description": "Which corner the in-game stats sit in, on whichever screen the game is on."
       },
       {

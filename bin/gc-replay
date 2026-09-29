@@ -16,8 +16,8 @@
 #
 set -uo pipefail
 
-ALT_NAME="omarchy-game-center-replay"
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/omarchy-game-center-$(id -u)}/omarchy-game-center"
+ALT_NAME="gdeyoung-gamecenter-replay"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-gamecenter-$(id -u)}/gdeyoung-gamecenter"
 PID_FILE="$STATE_DIR/replay.pid"
 CONF_FILE="$STATE_DIR/replay.json"
 LOG_FILE="$STATE_DIR/replay.log"
@@ -105,12 +105,12 @@ json_error() { jq -n --arg e "$1" '{ok:false,error:$e}'; }
 # ---------------------------------------------------------------- arm
 
 cmd_arm() {
-  local seconds=30 storage="ram" tier="balanced" monitor="" dir="" fps="" audio="desktop"
+  local seconds=300 storage="disk" tier="balanced" monitor="" dir="" fps="" audio="desktop"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --seconds) seconds="${2:-30}"; shift ;;
-      --storage) storage="${2:-ram}"; shift ;;
+      --seconds) seconds="${2:-300}"; shift ;;
+      --storage) storage="${2:-disk}"; shift ;;
       --quality) tier="${2:-balanced}"; shift ;;
       --monitor) monitor="${2:-}"; shift ;;
       --dir) dir="${2:-}"; shift ;;
@@ -135,12 +135,15 @@ cmd_arm() {
   geom="$(monitor_geometry "$monitor")"
   [[ -z $geom ]] && { json_error "unknown monitor $monitor"; return 1; }
   w="${geom%%x*}"; h="${geom#*x}"; h="${h%%@*}"; refresh="${geom##*@}"
-  # Default to 60 even on a 144Hz panel. A replay buffer is watched back, not
+  # Default to 60 even on a 120Hz panel. A replay buffer is watched back, not
   # played, and the cost of matching the monitor is paid twice: in bitrate (so
   # in RAM, every second, for the whole session) and in encoder load while you
   # are trying to game. Anyone who wants 120 can ask for it.
   [[ -z $fps ]] && fps=$(( refresh < 60 ? refresh : 60 ))
   (( fps > 240 )) && fps=240
+  # Windows-Game-Bar-style buffers run minutes, not seconds; cap at 15 minutes
+  # so a typo cannot ask gsr for an afternoon.
+  (( seconds > 900 )) && seconds=900
 
   [[ -z $dir ]] && dir="$(default_dir)"
   mkdir -p "$dir" || { json_error "cannot create $dir"; return 1; }

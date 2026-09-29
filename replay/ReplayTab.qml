@@ -109,18 +109,31 @@ Column {
 
   ButtonGroup {
     options: [
-      { value: "15", label: "15s" },
-      { value: "30", label: "30s" },
-      { value: "60", label: "60s" },
-      { value: "120", label: "2m" }
+      { value: "60", label: "1m" },
+      { value: "300", label: "5m" },
+      { value: "600", label: "10m" },
+      { value: "900", label: "15m" }
     ]
-    value: root.ready ? String(root.replay.seconds) : "30"
+    value: root.ready ? String(root.replay.seconds) : "300"
     foreground: root.foreground
     accent: Color.accent
     fontFamily: root.fontFamily
     // Changing length means restarting the capture, so it only takes effect on
     // the next arm — said plainly below rather than silently ignored.
     onChanged: function(v) { if (root.ready) root.replay.seconds = parseInt(v) }
+  }
+
+  Text {
+    width: parent.width
+    visible: root.ready && root.replay.seconds >= 600 && root.replay.storage === "ram"
+    wrapMode: Text.WordWrap
+    color: Color.urgent
+    opacity: 0.9
+    font.family: root.fontFamily
+    font.pixelSize: Style.font.caption
+    text: "A " + (root.replay.seconds / 60) + "-minute buffer in RAM costs "
+        + Math.round(root.estimateMb / 1024) + "GB held for the whole session. "
+        + "Set storage to disk below unless you have headroom to burn."
   }
 
   Row {
@@ -145,6 +158,66 @@ Column {
       foreground: root.foreground
       fontFamily: root.fontFamily
       onChanged: function(v) { if (root.ready) root.replay.audio = v }
+    }
+  }
+
+  Dropdown {
+    width: parent.width
+    label: "Buffer storage"
+    options: ["disk", "ram"]
+    value: root.ready ? root.replay.storage : "disk"
+    foreground: root.foreground
+    fontFamily: root.fontFamily
+    onChanged: function(v) { if (root.ready) root.replay.storage = v }
+  }
+
+  // Where dumps land. Empty = Videos/Clips (or $OMARCHY_SCREENRECORD_DIR).
+  // Plain QtQuick TextInput: the shell's widget set has no text field, and a
+  // folder picker would need a portal dialog we don't want to spawn from a
+  // layer-shell panel. A path is pasteable; that is enough.
+  Column {
+    width: parent.width
+    spacing: Style.spacing.xxs
+
+    Text {
+      text: "Clip folder"
+      color: root.foreground
+      opacity: 0.55
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+    }
+
+    Rectangle {
+      width: parent.width
+      height: Math.max(Style.space(22), folderInput.implicitHeight + Style.space(6))
+      radius: Style.cornerRadius
+      color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.06)
+      border.width: 1
+      border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.15)
+
+      TextInput {
+        id: folderInput
+        anchors.fill: parent
+        anchors.margins: Style.space(3)
+        verticalAlignment: TextInput.AlignVCenter
+        clip: true
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        text: root.ready ? root.replay.clipDir : ""
+        onTextChanged: if (root.ready && text !== root.replay.clipDir) root.replay.clipDir = text
+      }
+    }
+
+    Text {
+      width: parent.width
+      visible: root.ready && root.replay.clipDir === ""
+      wrapMode: Text.WordWrap
+      color: root.foreground
+      opacity: 0.45
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+      text: "Empty = Videos/Clips"
     }
   }
 

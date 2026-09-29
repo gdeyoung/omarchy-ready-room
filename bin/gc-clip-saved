@@ -11,7 +11,7 @@
 #
 set -uo pipefail
 
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/omarchy-game-center-$(id -u)}/omarchy-game-center"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-gamecenter-$(id -u)}/gdeyoung-gamecenter"
 mkdir -p "$STATE_DIR"
 
 path="${1:-}"

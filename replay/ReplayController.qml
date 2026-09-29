@@ -24,10 +24,13 @@ QtObject {
   property bool stockRecording: false
 
   // Config, mirrored from the widget's inline settings.
-  property int seconds: 30
-  property string storage: "ram"
+  property int seconds: 300
+  property string storage: "disk"
   property string quality: "balanced"
   property string audio: "desktop"
+  // Empty means the launcher's default (Videos/Clips, or
+  // $OMARCHY_SCREENRECORD_DIR). Set from the panel's clip-folder row.
+  property string clipDir: ""
 
   // Filled in from the running buffer, so the UI can say what it is actually
   // capturing rather than what was asked for.
@@ -49,11 +52,13 @@ QtObject {
     if (busy) return
     busy = true
     error = ""
-    actionProcess.command = script(["arm",
+    var args = ["arm",
       "--seconds", String(seconds),
       "--storage", storage,
       "--quality", quality,
-      "--audio", audio])
+      "--audio", audio]
+    if (clipDir !== "") args = args.concat(["--dir", clipDir])
+    actionProcess.command = script(args)
     actionProcess.running = true
   }
 

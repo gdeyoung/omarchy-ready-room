@@ -92,7 +92,7 @@ Column {
     width: parent.width
     label: "GPU load"
     description: root.ready && root.overlay.gpuKind === "none"
-      ? "no supported GPU found" : ""
+      ? "no utilization counters on this GPU — package power shown instead" : ""
     checked: root.ready && root.overlay.showGpu
     foreground: root.foreground
     fontFamily: root.fontFamily

@@ -41,7 +41,7 @@ set -uo pipefail
 # A timeout here costs us ownership of a switch, so buy more headroom.
 export OMARCHY_SHELL_IPC_TIMEOUT="${OMARCHY_SHELL_IPC_TIMEOUT:-5s}"
 
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/omarchy-game-center-$(id -u)}/omarchy-game-center"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-gamecenter-$(id -u)}/gdeyoung-gamecenter"
 TOKEN_FILE="$STATE_DIR/session"
 SNAPSHOT_FILE="$STATE_DIR/snapshot.json"
 INHIBIT_FILE="$STATE_DIR/inhibit-pid"

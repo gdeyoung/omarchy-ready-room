@@ -17,8 +17,8 @@ import "overlay"
 Panel {
   id: root
 
-  moduleName: "dielerorn.gamecenter"
-  ipcTarget: "dielerorn.gamecenter"
+  moduleName: "gdeyoung.gamecenter"
+  ipcTarget: "gdeyoung.gamecenter"
 
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color panelForeground: Color.popups.text
@@ -26,7 +26,7 @@ Panel {
 
   // A service is mounted once per session and may not exist yet on the very
   // first paint, so every read goes through this null check.
-  readonly property var gameCenter: bar && bar.shell ? bar.shell.serviceFor("dielerorn.gamecenter") : null
+  readonly property var gameCenter: bar && bar.shell ? bar.shell.serviceFor("gdeyoung.gamecenter") : null
   readonly property bool serviceReady: gameCenter !== null
   readonly property var session: gameCenter ? gameCenter.session : null
   readonly property bool sessionOn: session ? session.engaged : false
@@ -103,10 +103,11 @@ Panel {
       overlayStore.showPower = setting("overlayPower", false)
     }
     if (replay) {
-      replay.seconds = setting("replaySeconds", 30)
-      replay.storage = setting("replayStorage", "ram")
+      replay.seconds = setting("replaySeconds", 300)
+      replay.storage = setting("replayStorage", "disk")
       replay.quality = setting("replayQuality", "balanced")
       replay.audio = setting("replayAudio", "desktop")
+      replay.clipDir = String(setting("replayDir", ""))
     }
     loading = false
   }
@@ -145,6 +146,7 @@ Panel {
     function onStorageChanged() { root.persist() }
     function onQualityChanged() { root.persist() }
     function onAudioChanged() { root.persist() }
+    function onClipDirChanged() { root.persist() }
   }
 
   function tabIndex(value) {
@@ -197,6 +199,7 @@ Panel {
       entry.replayStorage = root.replay.storage
       entry.replayQuality = root.replay.quality
       entry.replayAudio = root.replay.audio
+      entry.replayDir = root.replay.clipDir
     }
     if (JSON.stringify(entry) === JSON.stringify(root.settings)) return
     root.settings = entry
