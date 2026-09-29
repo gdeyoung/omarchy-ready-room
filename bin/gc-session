@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Game Center session toggles.
+# Ready Room session toggles.
 #
 # A "session" is the set of things you flip before playing: stay awake, do not
 # disturb, night light off, performance power profile. The hard part is not
@@ -41,7 +41,7 @@ set -uo pipefail
 # A timeout here costs us ownership of a switch, so buy more headroom.
 export OMARCHY_SHELL_IPC_TIMEOUT="${OMARCHY_SHELL_IPC_TIMEOUT:-5s}"
 
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-gamecenter-$(id -u)}/gdeyoung-gamecenter"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-readyroom-$(id -u)}/gdeyoung-readyroom"
 TOKEN_FILE="$STATE_DIR/session"
 SNAPSHOT_FILE="$STATE_DIR/snapshot.json"
 INHIBIT_FILE="$STATE_DIR/inhibit-pid"
@@ -251,7 +251,7 @@ cmd_engage() {
   # systemd-inhibit needs no root for an active session: logind's polkit policy
   # allows inhibit-block-sleep with allow_active=yes.
   if command -v systemd-inhibit >/dev/null 2>&1; then
-    setsid systemd-inhibit --what="$inhibit_what" --who="Game Center" \
+    setsid systemd-inhibit --what="$inhibit_what" --who="Ready Room" \
       --why="Game session" --mode=block sleep infinity >/dev/null 2>&1 &
     local ipid=$!
     printf '%s %s\n' "$ipid" "$(proc_start_time "$ipid")" >"$INHIBIT_FILE"

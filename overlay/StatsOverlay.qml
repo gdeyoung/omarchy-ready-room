@@ -30,7 +30,7 @@ PanelWindow {
   color: "transparent"
 
   WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.namespace: "gamecenter-stats"
+  WlrLayershell.namespace: "readyroom-stats"
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
   exclusiveZone: 0
 

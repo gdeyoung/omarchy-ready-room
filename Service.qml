@@ -11,7 +11,7 @@ import "overlay"
 // A `service` is mounted once per session; a `bar-widget` is mounted once per
 // monitor. So session ownership, the replay process and the pad inventory live
 // here, and the panel reaches them through
-// `bar.shell.serviceFor("dielerorn.gamecenter")`.
+// `bar.shell.serviceFor("gdeyoung.readyroom")`.
 //
 // The rule this plugin is built around: the authoritative state is never in
 // this process. Tokens, pid files and sockets live under $XDG_RUNTIME_DIR, so
@@ -22,11 +22,11 @@ QtObject {
   id: root
 
   readonly property string home: Quickshell.env("HOME")
-  readonly property string pluginDir: home + "/.config/omarchy/plugins/gdeyoung.gamecenter"
+  readonly property string pluginDir: home + "/.config/omarchy/plugins/gdeyoung.readyroom"
 
-  // /run/user/1000/gdeyoung-gamecenter. Wiped at logout, which is exactly the
+  // /run/user/1000/gdeyoung-readyroom. Wiped at logout, which is exactly the
   // staleness boundary we want: anything found here belongs to this login.
-  readonly property string runtimeDir: (Quickshell.env("XDG_RUNTIME_DIR") || ("/tmp/gdeyoung-gamecenter-" + Quickshell.env("UID"))) + "/gdeyoung-gamecenter"
+  readonly property string runtimeDir: (Quickshell.env("XDG_RUNTIME_DIR") || ("/tmp/gdeyoung-readyroom-" + Quickshell.env("UID"))) + "/gdeyoung-readyroom"
 
   // Distinguishes "this boot's leftovers" from "a token that survived a
   // reboot" without trusting timestamps. Read once; it cannot change.
@@ -96,27 +96,27 @@ QtObject {
   }
 
   // Commands the panel does not need: these exist so a keybinding or a script
-  // can drive Game Center without opening it.
+  // can drive Ready Room without opening it.
   //
-  //   omarchy-shell gamecenter status
+  //   omarchy-shell readyroom status
   //
-  // The panel's own open/close/toggle lives on the `dielerorn.gamecenter`
+  // The panel's own open/close/toggle lives on the `gdeyoung.readyroom`
   // target, which Ui.Panel provides for free from `ipcTarget`.
   property IpcHandler ipc: IpcHandler {
-    target: "gamecenter"
+    target: "readyroom"
 
     function status(): string {
       return root.statusJson()
     }
 
     // Bindable without opening the panel:
-    //   bind = SUPER ALT, G, exec, omarchy-shell -q gamecenter sessionToggle
+    //   bind = SUPER ALT, G, exec, omarchy-shell -q readyroom sessionToggle
     function sessionOn(): string { root.session.engage(); return "engaging" }
     function sessionOff(): string { root.session.release(); return "releasing" }
     function sessionToggle(): string { root.session.toggle(); return "toggling" }
 
     // The one worth binding to a key:
-    //   bind = SUPER ALT, R, exec, omarchy-shell -q gamecenter saveClip
+    //   bind = SUPER ALT, R, exec, omarchy-shell -q readyroom saveClip
     // A quiet no-op when nothing is armed: a keybind that fires with no
     // buffer must not raise an error surface — the game is what matters.
     function saveClip(): string {
@@ -132,7 +132,7 @@ QtObject {
     function udevHelp(): string { root.pads.openUdevHelp(); return "opening" }
 
     // The other one worth binding to a key:
-    //   bind = SUPER ALT, O, exec, omarchy-shell -q gamecenter overlayToggle
+    //   bind = SUPER ALT, O, exec, omarchy-shell -q readyroom overlayToggle
     function overlayToggle(): string { root.overlay.toggle(); return "toggling" }
     function overlayOn(): string { root.overlay.enabled = true; return "on" }
     function overlayOff(): string { root.overlay.enabled = false; return "off" }

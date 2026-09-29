@@ -17,8 +17,8 @@ import "overlay"
 Panel {
   id: root
 
-  moduleName: "gdeyoung.gamecenter"
-  ipcTarget: "gdeyoung.gamecenter"
+  moduleName: "gdeyoung.readyroom"
+  ipcTarget: "gdeyoung.readyroom"
 
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color panelForeground: Color.popups.text
@@ -26,7 +26,7 @@ Panel {
 
   // A service is mounted once per session and may not exist yet on the very
   // first paint, so every read goes through this null check.
-  readonly property var gameCenter: bar && bar.shell ? bar.shell.serviceFor("gdeyoung.gamecenter") : null
+  readonly property var gameCenter: bar && bar.shell ? bar.shell.serviceFor("gdeyoung.readyroom") : null
   readonly property bool serviceReady: gameCenter !== null
   readonly property var session: gameCenter ? gameCenter.session : null
   readonly property bool sessionOn: session ? session.engaged : false
@@ -236,12 +236,12 @@ Panel {
     // badges is the fastest route to being uninstalled, so the detail lives
     // in the tooltip.
     tooltipText: {
-      if (!root.serviceReady) return "Game Center (starting)"
+      if (!root.serviceReady) return "Ready Room (starting)"
       var parts = []
       if (root.replayArmed) parts.push("replay armed (" + root.replay.seconds + "s)")
       if (root.sessionOn) parts.push("session on")
       if (root.replay && root.replay.stockRecording) parts.push("screen recording")
-      return parts.length ? "Game Center — " + parts.join(" · ") : "Game Center"
+      return parts.length ? "Ready Room — " + parts.join(" · ") : "Ready Room"
     }
 
     onPressed: function(b) { root.toggle() }
@@ -276,7 +276,7 @@ Panel {
 
         PanelHero {
           width: parent.width
-          title: "Game Center"
+          title: "Ready Room"
           meta: {
             if (!root.serviceReady) return "Starting…"
             if (root.session && root.session.busy) return "Working…"

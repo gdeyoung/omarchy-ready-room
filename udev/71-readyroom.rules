@@ -1,4 +1,4 @@
-# Game Center — optional access to two Xbox controls that are root-owned.
+# Ready Room — optional access to two Xbox controls that are root-owned.
 #
 # Installing this is a deliberate choice and nothing in the plugin requires it:
 # without it, the controller tab simply does not offer these two controls.

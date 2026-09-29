@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Game Center instant replay: a gpu-screen-recorder ring buffer you arm once
+# Ready Room instant replay: a gpu-screen-recorder ring buffer you arm once
 # and save from afterwards.
 #
 # The one non-obvious thing here is the rename. omarchy-capture-screenrecording
@@ -16,8 +16,8 @@
 #
 set -uo pipefail
 
-ALT_NAME="gdeyoung-gamecenter-replay"
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-gamecenter-$(id -u)}/gdeyoung-gamecenter"
+ALT_NAME="gdeyoung-readyroom-replay"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp/gdeyoung-readyroom-$(id -u)}/gdeyoung-readyroom"
 PID_FILE="$STATE_DIR/replay.pid"
 CONF_FILE="$STATE_DIR/replay.json"
 LOG_FILE="$STATE_DIR/replay.log"

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Game Center tests. Run from anywhere:  tests/run.sh
+# Ready Room tests. Run from anywhere:  tests/run.sh
 #
 # These are not unit tests of pure functions — the things most likely to break
 # this plugin are assumptions about *other* software, so that is what gets
@@ -16,7 +16,7 @@ ok()   { printf '  \033[32mpass\033[0m  %s\n' "$1"; PASS=$((PASS+1)); }
 bad()  { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; FAIL=$((FAIL+1)); }
 skip() { printf '  \033[33mskip\033[0m  %s (%s)\n' "$1" "$2"; SKIP=$((SKIP+1)); }
 
-echo "Game Center tests"
+echo "Ready Room tests"
 echo
 
 # ---------------------------------------------------------------- static
@@ -99,21 +99,21 @@ else
       ok "armed buffer is invisible to Omarchy's recording detector"
     fi
 
-    pidfile="${XDG_RUNTIME_DIR}/gdeyoung-gamecenter/replay.pid"
+    pidfile="${XDG_RUNTIME_DIR}/gdeyoung-readyroom/replay.pid"
     read -r pid _ <"$pidfile" 2>/dev/null
     if [[ -n ${pid:-} && -d /proc/$pid ]]; then ok "buffer process is tracked by pid file"
     else bad "buffer process is tracked by pid file"; fi
 
     # comm is truncated to 15 chars by the kernel, so anything matching our
     # renamed process by name must use the full command line.
-    if [[ "$(cat /proc/$pid/comm 2>/dev/null)" != "gdeyoung-gamecenter-replay" ]]; then
+    if [[ "$(cat /proc/$pid/comm 2>/dev/null)" != "gdeyoung-readyroom-replay" ]]; then
       ok "process name is truncated in comm (pid file is the only safe identity)"
     else
       skip "comm truncation" "kernel no longer truncates comm"
     fi
 
     "$PLUGIN_DIR/bin/gc-replay" disarm >/dev/null 2>&1
-    if ! pgrep -f '^gdeyoung-gamecenter-replay ' >/dev/null; then ok "disarm stops the buffer"
+    if ! pgrep -f '^gdeyoung-readyroom-replay ' >/dev/null; then ok "disarm stops the buffer"
     else bad "disarm stops the buffer"; fi
   else
     bad "buffer arms"
@@ -402,7 +402,7 @@ if XDG_CONFIG_HOME="$tmp" "$PLUGIN_DIR/bin/gc-mangohud" --position bottom-left \
   # A second run must not duplicate the block.
   XDG_CONFIG_HOME="$tmp" "$PLUGIN_DIR/bin/gc-mangohud" --position top-left \
     --metrics cpu </dev/null >/dev/null 2>&1
-  if [[ "$(grep -c 'begin game-center' "$conf" 2>/dev/null)" == "1" ]]; then
+  if [[ "$(grep -c 'begin ready-room' "$conf" 2>/dev/null)" == "1" ]]; then
     ok "rewriting mangohud config replaces its block rather than stacking"
   else
     bad "rewriting mangohud config replaces its block rather than stacking"

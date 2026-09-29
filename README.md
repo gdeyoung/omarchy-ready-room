@@ -1,4 +1,4 @@
-# Game Center
+# Ready Room
 
 The pre-game ritual in one Omarchy panel: session toggles, controllers and
 instant replay, instead of six separate bar widgets that don't know about each
@@ -11,34 +11,34 @@ other.
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/Dielerorn/omarchy-game-center.git --enable
+omarchy plugin add https://github.com/gdeyoung/omarchy-ready-room.git --enable
 ```
 
 ## Uninstall
 
 ```bash
-omarchy plugin remove dielerorn.gamecenter
+omarchy plugin remove gdeyoung.readyroom
 ```
 
 That removes the plugin and its bar widget. Three things it may have left
 outside its own directory, only if you used them:
 
-- **The udev rule** — `sudo rm /etc/udev/rules.d/71-gamecenter.rules && sudo udevadm control --reload-rules`
+- **The udev rule** — `sudo rm /etc/udev/rules.d/71-readyroom.rules && sudo udevadm control --reload-rules`
   (see `docs/UDEV.md`).
-- **MangoHud settings** — delete the block from `### begin game-center` to
-  `### end game-center` in `~/.config/MangoHud/MangoHud.conf`; everything else
+- **MangoHud settings** — delete the block from `### begin ready-room` to
+  `### end ready-room` in `~/.config/MangoHud/MangoHud.conf`; everything else
   in that file is yours.
 - **Saved clips** — in `Clips/` under your Videos folder (or under
   `$OMARCHY_SCREENRECORD_DIR` if you set it). They are yours to keep.
 
 Session changes (stay-awake, do not disturb, night light, power profile) are
 restored when a session ends, so end the session first
-(`omarchy-shell -q gamecenter sessionOff`) if you remove the plugin mid-game.
+(`omarchy-shell -q readyroom sessionOff`) if you remove the plugin mid-game.
 
 ## What it does
 
 **Session** — one switch for the things you flip before playing: keep awake, do
-not disturb, night light, power profile. Game Center only ever changes what it
+not disturb, night light, power profile. Ready Room only ever changes what it
 owns: anything you'd already turned on yourself is left exactly as it was, and
 restored state is never guessed. If another tool already holds the stay-awake
 marker, the panel says so instead of fighting it.
@@ -54,7 +54,7 @@ deadzone control; that lives in Steam Input or the game.
 recent clips. Saving is bound to a key, not to having the panel open:
 
 ```
-omarchy-shell -q gamecenter saveClip
+omarchy-shell -q readyroom saveClip
 ```
 
 **Overlay** — CPU, GPU, memory, VRAM, temperatures and GPU power in a corner of
@@ -63,7 +63,7 @@ game's own process, so for FPS the tab can match MangoHud to the same corner and
 metrics — only when you press the button, and only inside its own marked block
 of `MangoHud.conf`, leaving the rest of your config alone.
 
-Every tab's action is also an IPC call (`omarchy-shell -q gamecenter status`
+Every tab's action is also an IPC call (`omarchy-shell -q readyroom status`
 lists the state; `sessionToggle`, `replayToggle`, `overlayToggle` and friends
 are in `Service.qml`), so any of them can go on a key.
 
@@ -120,9 +120,9 @@ The repository *is* the plugin directory — `omarchy plugin validate` rejects
 symlinks, so there's no second copy to keep in sync.
 
 ```bash
-git clone https://github.com/Dielerorn/omarchy-game-center.git \
-  ~/.config/omarchy/plugins/dielerorn.gamecenter
-omarchy plugin validate ~/.config/omarchy/plugins/dielerorn.gamecenter
+git clone https://github.com/gdeyoung/omarchy-ready-room.git \
+  ~/.config/omarchy/plugins/gdeyoung.readyroom
+omarchy plugin validate ~/.config/omarchy/plugins/gdeyoung.readyroom
 journalctl --user -t omarchy-shell -f    # QML errors land here
 ```
 

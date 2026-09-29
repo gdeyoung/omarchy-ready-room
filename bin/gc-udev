@@ -3,7 +3,7 @@
 # The optional udev rule, shown and installed in a terminal the user can see.
 #
 # Two Xbox controls are root-owned: the guide-button light and the wireless
-# adapter's pairing attribute. Game Center hides both rather than offering
+# adapter's pairing attribute. Ready Room hides both rather than offering
 # buttons that fail, and this is the one place that explains why and offers to
 # change it.
 #
@@ -15,8 +15,8 @@
 set -uo pipefail
 
 PLUGIN_DIR="$(dirname "$(dirname "$(realpath "$0")")")"
-RULE_SRC="$PLUGIN_DIR/udev/71-gamecenter.rules"
-RULE_DST="/etc/udev/rules.d/71-gamecenter.rules"
+RULE_SRC="$PLUGIN_DIR/udev/71-readyroom.rules"
+RULE_DST="/etc/udev/rules.d/71-readyroom.rules"
 
 bold()  { printf '\033[1m%s\033[0m\n' "$1"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$1"; }
@@ -46,10 +46,10 @@ status_line() {
 }
 
 echo
-bold "Game Center — optional udev rule"
+bold "Ready Room — optional udev rule"
 echo
 cat <<'TXT'
-Two things on an Xbox controller are owned by root, so Game Center cannot
+Two things on an Xbox controller are owned by root, so Ready Room cannot
 touch them as you:
 
   • the guide-button light on the controller

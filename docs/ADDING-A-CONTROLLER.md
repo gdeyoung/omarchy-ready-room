@@ -1,6 +1,6 @@
 # Adding a controller
 
-This is the procedure for teaching Game Center about a pad it doesn't know:
+This is the procedure for teaching Ready Room about a pad it doesn't know:
 what it can do, what its buttons are called, and what it looks like.
 
 It is written to be followed with the controller **in your hands and plugged
@@ -266,7 +266,7 @@ and this test says so.
 ## 5. Verify on the hardware
 
 ```bash
-omarchy plugin validate ~/.config/omarchy/plugins/dielerorn.gamecenter
+omarchy plugin validate ~/.config/omarchy/plugins/gdeyoung.readyroom
 tests/run.sh
 omarchy-restart-shell            # new QML files need a full restart
 ```

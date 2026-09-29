@@ -14,7 +14,7 @@ replay buffer instead of starting a recording**.
 So the buffer is launched as:
 
 ```bash
-setsid bash -c "exec -a omarchy-game-center-replay gpu-screen-recorder …"
+setsid bash -c "exec -a omarchy-ready-room-replay gpu-screen-recorder …"
 ```
 
 Verified 2026-09-20 against gpu-screen-recorder 6.1.0 on Omarchy (kernel
@@ -45,16 +45,16 @@ early save as a normal outcome, not an error state.
 
 ## Socket path
 
-`$XDG_RUNTIME_DIR/omarchy-game-center/gsr.sock` is 45 bytes here, well inside
+`$XDG_RUNTIME_DIR/omarchy-ready-room/gsr.sock` is 45 bytes here, well inside
 the 108-byte `sun_path` limit. `omaclippr` hardcodes `/tmp` claiming the limit
 forces it; that isn't true and `/tmp` is a shared namespace. The launcher still
-asserts the length and falls back to `/tmp/omarchy-game-center-$UID/`.
+asserts the length and falls back to `/tmp/omarchy-ready-room-$UID/`.
 
 ## Never identify our own process by `comm`
 
 `/proc/<pid>/comm` truncates at 15 characters, so `pgrep -x
-omarchy-game-center-replay` matches nothing. Match on the full command line
-(`pgrep -f "^omarchy-game-center-replay "`) — and in the plugin itself, use the
+omarchy-ready-room-replay` matches nothing. Match on the full command line
+(`pgrep -f "^omarchy-ready-room-replay "`) — and in the plugin itself, use the
 recorded pid + start-time file rather than pattern matching at all.
 
 `SIGTERM` did not stop the recorder within 2 s in testing. Stop it the way the
@@ -282,7 +282,7 @@ over rather than the plugin silently never noticing a controller again.
 ## A service has to populate its own state at startup
 
 The pad inventory was only refreshed when the panel opened, so
-`omarchy-shell gamecenter status` reported zero controllers while one was
+`omarchy-shell readyroom status` reported zero controllers while one was
 plugged in, and the bar chip could not have shown a low-battery dot. The
 service now probes in `Component.onCompleted` alongside session recovery.
 

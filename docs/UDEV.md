@@ -1,6 +1,6 @@
 # Optional udev rule
 
-Two Xbox controls are owned by root, so Game Center cannot touch them as your
+Two Xbox controls are owned by root, so Ready Room cannot touch them as your
 user. Both are **optional** — the panel hides them rather than offering a
 control that fails, and everything else works without this.
 
@@ -12,7 +12,7 @@ control that fails, and everything else works without this.
 If you want them, install the rule:
 
 ```bash
-sudo install -m 644 udev/71-gamecenter.rules /etc/udev/rules.d/71-gamecenter.rules
+sudo install -m 644 udev/71-readyroom.rules /etc/udev/rules.d/71-readyroom.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger --subsystem-match=leds --subsystem-match=usb
 ```
@@ -27,7 +27,7 @@ in it if your controller works at all. Check with `id -nG`.
 To undo it:
 
 ```bash
-sudo rm /etc/udev/rules.d/71-gamecenter.rules
+sudo rm /etc/udev/rules.d/71-readyroom.rules
 sudo udevadm control --reload-rules
 ```
 

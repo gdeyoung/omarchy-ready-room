@@ -26,7 +26,7 @@ QtObject {
   property string lastError: ""
 
   // Which switches the session is allowed to touch. Persisted inline on the
-  // widget entry, so a user who never wants Game Center near their night light
+  // widget entry, so a user who never wants Ready Room near their night light
   // says so once.
   property bool wantIdle: true
   property bool wantDnd: true
@@ -41,8 +41,8 @@ QtObject {
   readonly property string stayAwakeNote: {
     switch (stayAwakeState) {
       case "ours": return "on for this session — released when it ends"
-      case "manual": return "already on — you set this, Game Center won't change it"
-      case "foreign": return "held by another tool — Game Center won't change it"
+      case "manual": return "already on — you set this, Ready Room won't change it"
+      case "foreign": return "held by another tool — Ready Room won't change it"
       default: return engaged ? "left off" : "off now — turned on for the session"
     }
   }
@@ -50,7 +50,7 @@ QtObject {
   // The same three-way distinction for the switches that have no marker file:
   // ours for this session / already yours / not readable.
   function note(owned, isOn, whenEngaging, whenAlready) {
-    if (engaged && owned) return isOn ? whenEngaging : "you changed this — Game Center won't put it back"
+    if (engaged && owned) return isOn ? whenEngaging : "you changed this — Ready Room won't put it back"
     if (isOn) return whenAlready
     return engaged ? "left as it was" : whenEngaging
   }
@@ -63,7 +63,7 @@ QtObject {
 
   // `status` rather than `probe`: it carries the snapshot too, and without the
   // snapshot the tab can only report what a switch *is*, not who set it. "DND
-  // is on" and "Game Center turned DND on" need to read differently, or the
+  // is on" and "Ready Room turned DND on" need to read differently, or the
   // panel looks like it is refusing to manage something it is managing.
   function refresh() {
     if (probeProcess.running) return
@@ -165,7 +165,7 @@ QtObject {
         if (deferred) retryTimer.restart()
         if (restored.length > 0) {
           notify.command = ["omarchy-notification-send", "-g", "󰊴", "-u", "normal", "-t", "6000",
-                            "Game Center",
+                            "Ready Room",
                             "Restored " + restored.join(", ") + " after the shell restarted"]
           notify.running = true
         }

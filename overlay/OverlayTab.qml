@@ -42,7 +42,7 @@ Column {
     opacity: 0.55
     font.family: root.fontFamily
     font.pixelSize: Style.font.caption
-    text: "Bind it to a key:\nomarchy-shell -q gamecenter overlayToggle"
+    text: "Bind it to a key:\nomarchy-shell -q readyroom overlayToggle"
   }
 
   PanelSeparator { width: parent.width }

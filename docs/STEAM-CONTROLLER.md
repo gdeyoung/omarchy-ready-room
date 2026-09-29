@@ -1,6 +1,6 @@
 # Steam Controller (2015)
 
-Game Center ships support for the original Steam Controller — capabilities,
+Ready Room ships support for the original Steam Controller — capabilities,
 button map and silhouette. It was written from the kernel driver, and the
 protocol half of it has since been checked against a device.
 

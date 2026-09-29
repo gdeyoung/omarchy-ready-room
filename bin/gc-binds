@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Game Center save-clip keybind, managed in ~/.config/hypr/bindings.lua.
+# Ready Room save-clip keybind, managed in ~/.config/hypr/bindings.lua.
 #
 # The plugin writes Hyprland config — the most invasive thing it does — so the
 # write is fenced four ways:
@@ -23,11 +23,11 @@
 set -uo pipefail
 
 BINDS_FILE="$HOME/.config/hypr/bindings.lua"
-BACKUP="$HOME/.config/hypr/bindings.lua.gamecenter-bak"
-BEGIN="--### begin game-center (managed, edit outside this block)"
-END="--### end game-center"
-DESC="Game Center: save replay clip"
-CMD="omarchy-shell -q gamecenter saveClip"
+BACKUP="$HOME/.config/hypr/bindings.lua.readyroom-bak"
+BEGIN="--### begin ready-room (managed, edit outside this block)"
+END="--### end ready-room"
+DESC="Ready Room: save replay clip"
+CMD="omarchy-shell -q readyroom saveClip"
 
 json_error() { jq -n --arg e "$1" '{ok:false,error:$e}'; }
 

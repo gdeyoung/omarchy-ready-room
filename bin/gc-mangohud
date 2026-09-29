@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Point MangoHud at the same metrics and corner the Game Center overlay uses,
+# Point MangoHud at the same metrics and corner the Ready Room overlay uses,
 # so the in-game HUD is not a second thing to configure by hand.
 #
 #   gc-mangohud --position top-right --metrics cpu,gpu,ram,vram,temps
@@ -17,8 +17,8 @@ set -uo pipefail
 
 CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/MangoHud"
 CONF="$CONF_DIR/MangoHud.conf"
-BEGIN="### begin game-center — managed, edit outside this block"
-END="### end game-center"
+BEGIN="### begin ready-room — managed, edit outside this block"
+END="### end ready-room"
 
 position="top-right"
 metrics="cpu,gpu,ram,vram,temps"

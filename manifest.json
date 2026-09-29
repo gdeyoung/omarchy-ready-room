@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "gdeyoung.gamecenter",
-  "name": "Game Center",
-  "version": "0.3.0",
+  "id": "gdeyoung.readyroom",
+  "name": "Ready Room",
+  "version": "1.0.0",
   "author": "Greg DeYoung (fork of Austin Larson's dielerorn.gamecenter)",
   "license": "MIT",
-  "repository": "https://github.com/gdeyoung/omarchy-game-center",
-  "description": "The pre-game ritual in one panel — session toggles, controllers and instant replay, without six separate bar widgets",
+  "repository": "https://github.com/gdeyoung/omarchy-ready-room",
+  "description": "The pre-game ritual in one panel — session toggles, controllers, instant replay and a stats overlay, without six separate bar widgets",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Game Center",
+    "displayName": "Ready Room",
     "description": "Session toggles, controllers and clip capture in one popout",
     "category": "Games",
     "allowMultiple": false,
@@ -69,7 +69,7 @@
         "type": "boolean",
         "label": "Session keeps the screen awake",
         "defaultValue": true,
-        "description": "Only ever claimed when stay-awake is off to begin with. If you turned it on yourself, or another plugin holds it, Game Center leaves it alone and says so in the panel."
+        "description": "Only ever claimed when stay-awake is off to begin with. If you turned it on yourself, or another plugin holds it, Ready Room leaves it alone and says so in the panel."
       },
       {
         "key": "silenceNotifications",

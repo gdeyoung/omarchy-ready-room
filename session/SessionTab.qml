@@ -2,12 +2,12 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 
-// The Session tab: one switch per thing Game Center is allowed to touch, and
+// The Session tab: one switch per thing Ready Room is allowed to touch, and
 // an honest sub-label under each one saying who currently owns it.
 //
 // The sub-labels are the point. Every other tool that drives these switches
 // does so silently, so when your screen sleeps mid-game you have no idea which
-// of three plugins let it. Here, a switch Game Center will not touch says so,
+// of three plugins let it. Here, a switch Ready Room will not touch says so,
 // and says why, before you start the session rather than after.
 Column {
   id: root
@@ -37,7 +37,7 @@ Column {
       color: root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
-      text: "Another gaming plugin is holding stay-awake. Game Center will "
+      text: "Another gaming plugin is holding stay-awake. Ready Room will "
           + "leave it alone, so both tools won't fight over it."
     }
   }
@@ -70,7 +70,7 @@ Column {
       return root.session.note(root.session.ownedDnd,
                                root.session.dndState === "on",
                                "on for this session — put back when it ends",
-                               "already on — Game Center won't change it")
+                               "already on — Ready Room won't change it")
     }
     checked: root.ready && root.session.wantDnd
     foreground: root.foreground
@@ -138,7 +138,7 @@ Column {
       if (root.session.lastError !== "") return root.session.lastError
       if (root.session.busy) return "working…"
       return root.session.engaged
-        ? "Session on. Ending it puts back only what Game Center changed."
+        ? "Session on. Ending it puts back only what Ready Room changed."
         : "Nothing changed yet."
     }
   }
