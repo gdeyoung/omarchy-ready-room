@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ready Room — see it all before you sit down</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #0b0d13; }
+  body {
+    width: 2000px; height: 1125px; overflow: hidden;
+    font-family: "Segoe UI", "Noto Sans", sans-serif; color: #dde3ec;
+    display: flex; flex-direction: column; padding: 34px 44px 0;
+  }
+  .top { display: flex; align-items: baseline; gap: 22px; }
+  h1 { font-size: 58px; font-weight: 800; letter-spacing: -0.5px; }
+  h1 span { color: #7aa2f7; }
+  .sub { font-size: 25px; color: #9aa5b8; }
+  .row { flex: 1; display: flex; gap: 18px; align-items: stretch; margin-top: 26px; }
+  .card {
+    flex: 1; border: 2px solid #3b4358; border-radius: 14px; padding: 12px;
+    display: flex; flex-direction: column; background: #12151d;
+    min-width: 0;
+  }
+  .card .shot { flex: 1; min-height: 0; overflow: hidden; border-radius: 8px; position: relative; }
+  .shot img { position: absolute; left: 50%; transform: translateX(-50%); height: 100%; }
+  .cap { margin-top: 10px; text-align: center; font-size: 21px; color: #b9c2d4; }
+  .cap b { color: #e8edf6; }
+  .foot { height: 58px; display: flex; align-items: center; justify-content: center; gap: 26px;
+          font-size: 22px; color: #8b96ab; }
+  .foot b { color: #c9d3e4; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <h1>Ready <span>Room</span></h1>
+    <div class="sub">five tabs that cover the whole gaming session — before, during, after</div>
+  </div>
+  <div class="row">
+    <div class="card"><div class="shot"><img src="scene-session.png"></div><div class="cap"><b>Session</b> — screen, notifications, night light, power: borrowed and returned</div></div>
+    <div class="card"><div class="shot"><img src="scene-pads.png"></div><div class="cap"><b>Pads</b> — controllers, live input, rumble test</div></div>
+    <div class="card"><div class="shot"><img src="scene-gear.png"></div><div class="cap"><b>Gear</b> — battery levels for mice, keyboards, headsets</div></div>
+    <div class="card"><div class="shot"><img src="scene-clips.png"></div><div class="cap"><b>Clips</b> — replay buffer, save the last 60&nbsp;s</div></div>
+    <div class="card"><div class="shot"><img src="scene-overlay.png"></div><div class="cap"><b>Overlay</b> — system metrics above the game, MangoHud sync</div></div>
+  </div>
+  <div class="foot">
+    <span><b>omarchy plugin add</b> gdeyoung/readyroom</span>
+    <span>·</span>
+    <span>restores everything it changes when the session ends</span>
+    <span>·</span>
+    <span>works with the stock Omarchy bar</span>
+  </div>
+</body>
+</html>
