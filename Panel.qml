@@ -42,6 +42,7 @@ Panel {
   readonly property var binds: gameCenter ? gameCenter.binds : null
   readonly property var padStore: gameCenter ? gameCenter.pads : null
   readonly property var overlayStore: gameCenter ? gameCenter.overlay : null
+  readonly property var gearStore: gameCenter ? gameCenter.gear : null
 
   // The probe costs four subprocesses, so it runs when the panel opens rather
   // than on a timer. While the panel is closed the marker watcher is the only
@@ -67,14 +68,17 @@ Panel {
       padStore.refresh()
       padStore.watching = (root.tab === "pads")
     }
+    if (gearStore) gearStore.watching = (root.tab === "gear")
   }
 
-  // Battery level changes with no filesystem event behind it, so the pads tab
-  // polls slowly — but only while it is the tab being looked at.
+  // Battery level changes with no filesystem event behind it, so the pads and
+  // gear tabs poll slowly — but only while they are the tab being looked at.
   onTabChanged: {
-    if (!padStore) return
-    padStore.watching = (tab === "pads" && opened)
-    if (tab !== "pads") padStore.stopStream()
+    if (padStore) {
+      padStore.watching = (tab === "pads" && opened)
+      if (tab !== "pads") padStore.stopStream()
+    }
+    if (gearStore) gearStore.watching = (tab === "gear" && opened)
   }
 
   readonly property int panelWidth: setting("panelWidth", 380)
@@ -84,6 +88,7 @@ Panel {
   readonly property var tabs: [
     { value: "session", label: "Session" },
     { value: "pads", label: "Pads" },
+    { value: "gear", label: "Gear" },
     { value: "clips", label: "Clips" },
     { value: "overlay", label: "Overlay" }
   ]
@@ -376,6 +381,14 @@ Panel {
           width: parent.width
           visible: root.tab === "pads"
           pads: root.padStore
+          foreground: root.panelForeground
+          fontFamily: root.fontFamily
+        }
+
+        GearTab {
+          width: parent.width
+          visible: root.tab === "gear"
+          gear: root.gearStore
           foreground: root.panelForeground
           fontFamily: root.fontFamily
         }

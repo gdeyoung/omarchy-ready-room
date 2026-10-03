@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""Peripheral battery inventory for the Gear tab. Standard library only.
+
+Every source is normalized to one row shape:
+
+    { key, name, kind, level, charging, detail }
+
+  level    0-100, or null when the source cannot tell
+  charging true / false when known, null when not
+  detail   extra source-specific sentence, "" usually
+
+UPower is the only source probed here. Anything with a real percentage
+comes through; laptop batteries, line power and monitors are excluded —
+this tab is about the gear on the desk, not the machine itself. A mouse
+asleep in its dongle reports nothing and is skipped rather than shown at
+a made-up level (the same "absent, not zero" rule the overlay follows).
+
+Kind mapping and the null-charging tri-state follow the normalization
+vocabulary of io.github.69harold69.gadget-batteries (MIT); this probe is
+an independent implementation against upower(1), which every Omarchy
+install has, so no D-Bus library is needed.
+
+Prints one JSON object on stdout: { "gear": [ ... ] }.
+"""
+
+import json
+import re
+import subprocess
+import sys
+
+# UPower device types that are not desk gear. gaminginput is KEPT (it is
+# the pads' own battery path when a pad pairs over Bluetooth).
+IGNORED_KINDS = {
+    "battery", "line_power", "ups", "monitor", "computer",
+    "unknown", "linepower", "Pda", "printer",
+}
+
+# upower --dump section header, e.g. "Device: /org/freedesktop/UPower/devices/mouse_..."
+DEVICE_RE = re.compile(r"^Device:\s+(\S+)$")
+
+# Native-path prefix tells us the device's kind when the model string is
+# generic ("Logitech USB Receiver"). NOTE: matched against the LAST path
+# segment as a prefix — a substring match would turn
+# ".../mouse_hidpp_battery_0" into a laptop battery.
+KIND_BY_PREFIX = [
+    ("mouse", "mouse"), ("keyboard", "keyboard"), ("headset", "headset"),
+    ("headphones", "headset"), ("gaming_input", "gamepad"),
+    ("gaming-input", "gamepad"), ("audio", "headset"), ("pen", "mouse"),
+    ("touchpad", "mouse"), ("tablet", "tablet"), ("phone", "phone"),
+    ("watch", "watch"), ("ups", "ups"), ("monitor", "monitor"),
+    ("printer", "printer"), ("pda", "pda"),
+]
+
+# Fallbacks when neither native path nor model names the kind. Order matters:
+# specific multi-word needles first, generic single words later — "mx " alone
+# would call an MX Keys keyboard a mouse.
+KIND_BY_MODEL = [
+    ("mx master", "mouse"), ("mx anywhere", "mouse"), ("mx ergo", "mouse"),
+    ("g pro", "mouse"), ("mouse", "mouse"),
+    ("mx keys", "keyboard"), ("keyboard", "keyboard"), ("k380", "keyboard"),
+    ("headset", "headset"), ("headphone", "headset"), ("airpods", "earbuds"),
+    ("galaxy buds", "earbuds"), ("buds", "earbuds"), ("earbuds", "earbuds"),
+    ("dualsense", "gamepad"), ("dualshock", "gamepad"), ("xbox", "gamepad"),
+    ("8bitdo", "gamepad"), ("gamepad", "gamepad"), ("controller", "gamepad"),
+]
+
+
+def kind_for(native_path, model, upower_kind, dbus_path=""):
+    """Best-effort kind from four signals, 'other' when nothing matches."""
+    # The D-Bus object path is the strongest signal: UPower prefixes its last
+    # segment with the device type (mouse_..., keyboard_...) for peripherals
+    # whose native-path is generic ("hidpp_battery_0"). Prefix-of-segment
+    # only — substring matching misreads ".../mouse_hidpp_battery_0".
+    p = dbus_path.rsplit("/", 1)[-1].lower()
+    n = native_path.lower()
+    for prefix, kind in KIND_BY_PREFIX:
+        if p.startswith(prefix) or n.startswith(prefix):
+            return kind
+    hay = (native_path + " " + model).lower()
+    for needle, kind in KIND_BY_MODEL:
+        if needle in hay:
+            return kind
+    k = (upower_kind or "").lower()
+    if k in ("mouse", "keyboard", "headset", "gaminginput"):
+        return {"gaminginput": "gamepad"}.get(k, k)
+    return "other"
+
+
+def parse_dump(text):
+    """Parse `upower --dump` into normalized rows. Pure function — testable."""
+    rows = []
+    current = None
+
+    def flush():
+        if current is None:
+            return
+        path = current.get("path", "")
+        native = current.get("native", "")
+        # The D-Bus object path is the reliable discriminator: laptop battery,
+        # AC/USB sources and UPower's composite DisplayDevice all carry
+        # dedicated prefixes on their last segment. native-path names vary
+        # ("BAT1" vs "battery_BAT1"), and a substring match would eat
+        # ".../mouse_hidpp_battery_0".
+        seg = path.rsplit("/", 1)[-1]
+        for prefix in ("battery_", "line_power_", "DisplayDevice"):
+            if seg.startswith(prefix):
+                return
+        kind = kind_for(native, current.get("model", ""),
+                        current.get("kind", ""), path)
+        if kind in IGNORED_KINDS:
+            return
+        rows.append({
+            "key": "upower:" + (native or path),
+            "name": current.get("model") or native or "Device",
+            "kind": kind,
+            "level": current.get("percent"),
+            "charging": current.get("charging"),
+            "detail": "",
+        })
+
+    for line in text.splitlines():
+        m = DEVICE_RE.match(line)
+        if m:
+            flush()
+            current = {"path": m.group(1)}
+            continue
+        if current is None:
+            # before the first Device: header
+            if line.startswith("  native-path:"):
+                current = {"native": line.split(":", 1)[1].strip()}
+            continue
+        stripped = line.strip()
+        if ":" not in stripped:
+            continue
+        key, _, value = stripped.partition(":")
+        key = key.strip()
+        value = value.strip()
+        if key == "native-path":
+            current["native"] = value
+        elif key == "model":
+            current["model"] = value
+        elif key == "percentage":
+            # "87%" -> 87; anything unparsable stays null.
+            try:
+                current["percent"] = int(re.match(r"(\d+)", value).group(1))
+            except (AttributeError, ValueError):
+                current["percent"] = None
+        elif key == "state":
+            current["charging"] = {
+                "fully-charged": True,
+                "charging": True,
+                "discharging": False,
+                "pending-charge": True,
+                "pending-discharge": False,
+            }.get(value, None)
+        elif key == "capacity-level" or key == "battery_level" or key == "level":
+            if value in ("full", "high", "low", "critical"):
+                current["level"] = value
+        elif key == "type" or key == "kind":
+            current["kind"] = value
+    flush()
+    return rows
+
+
+def main():
+    try:
+        text = subprocess.run(
+            ["upower", "--dump"], capture_output=True, text=True, timeout=10
+        ).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        print(json.dumps({"gear": []}))
+        return 0
+    print(json.dumps({"gear": parse_dump(text)}))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

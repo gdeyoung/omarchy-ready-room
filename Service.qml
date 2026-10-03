@@ -65,6 +65,10 @@ QtObject {
 
   readonly property int padCount: pads.padCount
 
+  // M7. Desk-gear batteries (mice, keyboards, headsets): slow-polled only
+  // while the Gear tab is visible.
+  property GearController gear: GearController { pluginDir: root.pluginDir }
+
   // M6. The in-game stats overlay and its MangoHud bridge.
   property OverlayController overlay: OverlayController { pluginDir: root.pluginDir }
 

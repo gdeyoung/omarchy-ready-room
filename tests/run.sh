@@ -151,6 +151,14 @@ else
 fi
 
 echo
+echo "gear probe"
+if python3 "$PLUGIN_DIR/tests/gear_probe_check.py" >/dev/null 2>&1; then
+  ok "gear probe parser (tests/gear_probe_check.py)"
+else
+  bad "gear probe parser (tests/gear_probe_check.py)"
+fi
+
+echo
 echo "controllers"
 probe="$("$PLUGIN_DIR/bin/gc-pad-probe" 2>/dev/null)"
 if jq -e '.pads | type == "array"' <<<"$probe" >/dev/null 2>&1; then
